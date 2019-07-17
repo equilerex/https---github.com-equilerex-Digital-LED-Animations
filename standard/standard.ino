@@ -64,14 +64,15 @@ z     Show LED's                          no
 #define LED_CK 11                                               // Serial clock pin for WS2801 or APA102.
 #define COLOR_ORDER GRB                                         // It's GRB for WS2812B
 #define LED_TYPE WS2811                                         // What kind of strip are you using?
-#define NUM_LEDS 109 
+#define NUM_LEDS 70
 
 // Pushbutton pin definition
 const int buttonPin = 12;                                     // Digital pin used for debounced pushbutton
 Button myBtn(buttonPin, true, true, 50);                      // Declare the button
 
 // Initialize changeable global variables.
-uint8_t max_bright = 128;                                     // Overall brightness definition. It can be changed on the fly.
+uint8_t max_bright = 255;                                    // Overall brightness definition. It can be changed on the fly.
+uint8_t new_bright = 255;                                                 // Maximum number of modes is set later.
 struct CRGB leds[NUM_LEDS];                                  // Initialize our LED array.
 int ledMode = 0;                                             // mode on startup
 int maxMode;                                                 // Maximum number of modes is set later.
@@ -137,7 +138,8 @@ bool boolcolours = 1;                                         // True = random, 
 uint8_t numcolours = 2;                                       // Number of colours in the array to display.
 unsigned long colours[10] = {0xff0000, 0x00ff00, 0x0000ff, 0xffffff};  // Just assign the first 3 of these selectable colours.
 uint8_t maxbar = 1;                                           // Maximum # of pixels to turn on in a row
-uint8_t fadeval = 224;                                        // Fade rate
+uint8_t fadeval = 224;                                         // Maximum # of pixels to turn on in a row
+uint8_t buttonDown = 0;                                        // Fade rate
 
 
 // three_sin variables ---------------------------------------------------------------------
@@ -221,39 +223,49 @@ void setup() {
 
 //------------------MAIN LOOP---------------------------------------------------------------
 void loop() {
-  readbutton();                                               // Button press increases the ledMode up to last contiguous mode and then starts over at 0.
-  readkeyboard();                                             // Get keyboard input.
+  readbutton();                                               // Button press increases the ledMode up to last contiguous mode and then starts over at 0. 
   change_mode(ledMode, 0);                                    // Strobe, don't set it.
   show_at_max_brightness_for_power();                         // Power managed display of LED's.
   delay_at_max_brightness_for_power(2.5*thisdelay);           // Power managed FastLED delay. 
   //demo reel specific
   EVERY_N_MILLISECONDS( 20 ) { gHue++; thishue++;} 
+
+
+
+
+
+  
  
 } // loop()
 
 
 void change_mode(int newMode, int mc){                        // mc stands for 'Mode Change', where mc = 0 is strobe the routine, while mc = 1 is change the routine
 
-   maxMode = 15;
+   maxMode = 21;
    if(mc) fill_solid(leds,NUM_LEDS,CRGB(0,0,0));              // Clean up the array for the first time through. Don't show display though, so you may have a smooth transition.
 
   switch (newMode) {                                          // First time through a new mode, so let's initialize the variables for a given display.
-    case  0: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(191,0,255)); LEDS.show();} LEDS.show(); break;              // All on, not animated.
-    case  1: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(255,61,255)); LEDS.show();} LEDS.show(); break;              // All on, not animated.  
-    case  2: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(0,255,0)); LEDS.show();} LEDS.show(); break;              // All on, not animated. 
-    case  3: if(mc) {thisdelay=20;} rainbow(); break;
-    case  4: if(mc) {thisdelay=20;} rainbowWithGlitter(); break;
-    case  5: if(mc) {thisdelay=20; thishue = 20;} confetti(); break;
-    case  6: if(mc) {thisdelay=20; thishue = 50;} sinelon(); break;
-    case  7: if(mc) {thisdelay=20;} bpm(); break;
-    case  8: if(mc) {thisdelay=10;} juggle(); break;
-    case  9: if(mc) {thisdelay=20; hxyinc = random16(1,15); octaves=random16(1,3); hue_octaves=random16(1,5); hue_scale=random16(10, 50);  x=random16(); xscale=random16(); hxy= random16(); hue_time=random16(); hue_speed=random16(1,3); x_speed=random16(1,30);} noise16(); break;
-    case  10: if(mc) {thisdelay=10; thiscutoff=96; thatcutoff=96; thisrot=1;} two_sin(); break;
-    case 11: if(mc) {thisdelay=20; thisrot=1; thiscutoff=254; allfreq=8; bgclr=0; bgbri=10;} one_sin(); break;
-    case 12: if(mc) {thisdelay=40; colours[0]=0x13b0f2; numcolours=1; boolcolours=0; maxbar=1;} pop_fade(); break; 
-    case 13: if(mc) {thisdelay=20; mul1=20; mul2=25; mul3=22;} three_sin(); break;
-    case 14: if(mc) {thisdelay=20; mul1=5; mul2=8; mul3=7;} three_sin(); break;
-    case 15: if(mc) {thisdelay=10; deltahue=2; thisrot=5;} rainbow_march(); break;
+    case  0: if(mc) {thisdelay=20;} rainbowWithGlitter(); break;
+    case  1: if(mc) {thisdelay=20;} rainbowWithGlitter(); break;
+    case  2: if(mc) {thisdelay=20; thishue = 20;} confetti(); break;
+    case  3: if(mc) {thisdelay=20; thishue = 50;} sinelon(); break;
+    case  4: if(mc) {thisdelay=20;} bpm(); break;
+    case  5: if(mc) {thisdelay=10;} juggle(); break;
+    case  6: if(mc) {thisdelay=20; hxyinc = random16(1,15); octaves=random16(1,3); hue_octaves=random16(1,5); hue_scale=random16(10, 50);  x=random16(); xscale=random16(); hxy= random16(); hue_time=random16(); hue_speed=random16(1,3); x_speed=random16(1,30);} noise16(); break;
+    case  7: if(mc) {thisdelay=10; thiscutoff=96; thatcutoff=96; thisrot=1;} two_sin(); break;
+    case 8: if(mc) {thisdelay=20; thisrot=1; thiscutoff=254; allfreq=8; bgclr=0; bgbri=10;} one_sin(); break;
+    case 9: if(mc) {thisdelay=40; colours[0]=0x13b0f2; numcolours=1; boolcolours=0; maxbar=1;} pop_fade(); break; 
+    case 10: if(mc) {thisdelay=20; mul1=20; mul2=25; mul3=22;} three_sin(); break;
+    case 11: if(mc) {thisdelay=20; mul1=5; mul2=8; mul3=7;} three_sin(); break;
+    case 12: if(mc) {thisdelay=10; deltahue=2; thisrot=5;} rainbow_march(); break;
+    case  13: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(255,100,0)); LEDS.show();} LEDS.show(); break;              // All on, not animated.
+    case  14: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(255,0,0)); LEDS.show();} LEDS.show(); break;              // All on, not animated.  
+    case  15: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(0,255,0)); LEDS.show();} LEDS.show(); break;              // All on, not animated. 
+    case  16: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(0,0,255)); LEDS.show();} LEDS.show(); break;              // All on, not animated.
+    case  17: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(255,0,255)); LEDS.show();} LEDS.show(); break;              // All on, not animated.
+    case  19: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(255,200,0)); LEDS.show();} LEDS.show(); break;              // All on, not animated.
+    case  20: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(055,255,255)); LEDS.show();} LEDS.show(); break;              // All on, not animated.
+    case  21: if(mc) {fill_solid(leds, NUM_LEDS,CRGB(120,0,120)); LEDS.show();} LEDS.show(); break;              // All on, not animated.
   } // switch newMode
 
   ledMode = newMode;
@@ -262,109 +274,35 @@ void change_mode(int newMode, int mc){                        // mc stands for '
 
 //----------------- Hardware Support Functions ---------------------------------------------
 
-
-
-void readkeyboard() {                                         // PROCESS HARDWARE SERIAL COMMANDS AND ARGS
-  while (Serial.available() > 0) {
-
-    inbyte = Serial.read();                                   // READ SINGLE BYTE COMMAND
-    Serial.print("Serial read is: ");
-    Serial.println(inbyte);
-    switch(inbyte) {
-
-      case 59: break;                                         // BREAK IF INBYTE = ';'
-
-      case 97:                                                // "a" - SET ALL TO ONE COLOR BY HSV 0-255
-        thisarg = Serial.parseInt();
-        thissat = 255;
-        thisbright = 255;
-        fill_solid_HSV(thisarg, thissat, thisbright);
-        break;
-
-      case 98:                                                // "b" - SET MAX BRIGHTNESS to #
-        max_bright = Serial.parseInt();
-        LEDS.setBrightness(max_bright);
-        break;
-
-      case 99:                                                // "c" - CLEAR STRIP
-        fill_solid(leds,NUM_LEDS,CRGB(0,0,0));
-        break;
-
-      case 100:                                               // "d" - SET DELAY VAR to #
-        thisarg = Serial.parseInt();
-        thisdelay = thisarg;
-        break;
-
-      case 101:                                               // "e1 or e2" - DECREASE OR INCREASE delay by 1
-        thisarg = Serial.parseInt();
-        if (thisarg == 1) thisdelay--; else thisdelay++;
-        if (thisdelay < 0 ) thisdelay = 0;
-        break;
-
-      case 104:                                               // "h" - SET HUE VAR to #
-        thisarg = Serial.parseInt();
-        thishue = thisarg;
-        break;
-
-      case 109:                                               // "m" - SET MODE to #
-        thisarg = Serial.parseInt();
-        change_mode(thisarg, 1);
-        break;
-
-      case 110:                                               // "n0 or n1" - DIRECTION is 0 or 1
-        thisarg = Serial.parseInt();
-        if (thisarg <=1 && thisarg >=0 ) thisdir = thisarg;
-        break;
-
-      case 111:                                               // "o1 or o2" - DECREASE OR INCREASE MODE by 1
-        thisarg = Serial.parseInt();
-        if (thisarg == 1) ledMode--;
-        if (thisarg == 2) ledMode++;
-        if (ledMode < 0) ledMode = 0;
-        change_mode(ledMode, 1);
-        break;
-
-      case 113:                                               // "q" - DISPLAY VERSION NUMBER
-        Serial.print(AALIGHT_VERSION);
-        break;
-
-      case 114:                                               // "r1 or r2" - DECREASE OR INCREASE BRIGHTNESS by / or * 2
-        thisarg = Serial.parseInt();
-        if (thisarg == 1) max_bright=max_bright/2; else max_bright=max_bright*2;
-        max_bright = constrain(max_bright, 1, 255);
-        LEDS.setBrightness(max_bright);
-        show_at_max_brightness_for_power();
-        break;
-
-      case 116:                                               // "t" - SET SATURATION VAR to #
-        thisarg = Serial.parseInt();
-        thissat = thisarg;
-        break;
-
-      case 117:                                               // "u1 or u2" - DECREASE OR INCREASE HUE by 8
-        thisarg = Serial.parseInt();                          // Only works in some CHSV modes
-        if (thisarg == 1) thishue=thishue-8; else thishue=thishue+8;
-        show_at_max_brightness_for_power();
-        break;
-
-      case 122:                                               // "z" - COMMAND TO 'SHOW' LEDS
-        show_at_max_brightness_for_power();
-        break;
-    } // switch inbyte
-  } // while Serial.available
-} // readkeyboard()
-
+ 
 
 void readbutton() {                                           // Read the button and increase the mode
-  myBtn.read();
-  if(myBtn.wasReleased()) {
-    ledMode = ledMode > maxMode ? 0 : ledMode+1;              // Reset to 0 only during a mode change
-    change_mode(ledMode, 1);
+  myBtn.read(); 
+  if(myBtn.wasReleased() && buttonDown==0) { 
+      buttonDown = 0;  
+      ledMode = ledMode > maxMode ? 0 : ledMode+1;              // Reset to 0 only during a mode change
+      change_mode(ledMode, 1); 
   }
-  if(myBtn.pressedFor(1000)) {
-    ledMode = 0;
-    change_mode(ledMode, 1);
+   if(myBtn.wasReleased() && buttonDown==1) { 
+   
+    buttonDown = 0;  
   }
+  
+  if(myBtn.pressedFor(1000) && buttonDown==0 ) {
+    buttonDown = 1;  
+    max_bright=max_bright*2;
+    max_bright = constrain(max_bright, 1, 255);
+    LEDS.setBrightness(max_bright);
+    show_at_max_brightness_for_power();
+  };
+
+  new_bright = int(analogRead(1)/4 + 0.5); 
+  if(abs(max_bright-new_bright) > 5) { 
+    max_bright = new_bright;
+    LEDS.setBrightness(max_bright);  
+  }
+
+    
 } // readbutton()
 
 
@@ -388,7 +326,7 @@ void fill_solid_HSV(uint8_t ahue, uint8_t asat, uint8_t abright) {  // Set all L
 //---------merge from demor reel 100
 void rainbow() {
   // FastLED's built-in rainbow generator
-  fill_rainbow( leds, NUM_LEDS, gHue, 7);
+  fill_rainbow( leds, NUM_LEDS, gHue, max_bright);
 }
 
 void rainbowWithGlitter() {
@@ -423,5 +361,4 @@ void juggle2() {
     dothue += 32;
   }
 }
-
 
